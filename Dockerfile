@@ -15,11 +15,16 @@ RUN if [[ " ${FEATURES//,/ } " == *" fips "* ]]; then \
         apt-get install -y --no-install-recommends golang-go && \
         rm -rf /var/lib/apt/lists/*; \
     fi
-# FEATURES are pgdog's; the plugin has none of them.
+# FEATURES are pgdog's; the plugin has none of them. The AWS-LC FIPS
+# module's delocate step rejects GCC 15 output (Ubuntu 26.04), so FIPS
+# builds use clang.
 RUN source ~/.cargo/env && \
     cargo_features=(); \
     if [ -n "${FEATURES}" ]; then \
         cargo_features=(--no-default-features --features "${FEATURES}"); \
+    fi && \
+    if [[ " ${FEATURES//,/ } " == *" fips "* ]]; then \
+        export CC=clang CXX=clang++; \
     fi && \
     cd pgdog && \
     cargo build --release "${cargo_features[@]}" && \
